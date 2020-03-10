@@ -18,8 +18,9 @@ public class Main {
 
     public static void main(String[] args) {
         // zapytanie do linku
-        // http://api.nbp.pl/api/exchangerates/rates/TABLE_TYPE/CURRENCY_CHOISE/START_DATA/END_DATA/?format=json
-        String link = "http://api.nbp.pl/api/exchangerates/rates";
+        // "A" i "C"        http://api.nbp.pl/api/exchangerates/rates/{table}/{currency}/{startDate}/{endDate}/?format=json
+        // "B"              http://api.nbp.pl/api/exchangerates/tables/B/{startDate}/{endDate}/?format=json
+        String link = "http://api.nbp.pl/api/exchangerates";
 
 
         Scanner scan = new Scanner(System.in);
@@ -31,7 +32,7 @@ public class Main {
 
 
         System.out.println("Podaj rodzaj tabeli (A/B/C)");
-        tableType = scan.nextLine();
+        tableType = scan.nextLine().toUpperCase();
         System.out.println("Podaj walutę, dla której chcesz spradzić statystyki:");
         currencyChoice = scan.nextLine().toUpperCase();
         System.out.println("Podaj datę od której chcesz rozpocząć sprawdzanie kursów walut w formacie(RRRR-MM-DD): ");
@@ -39,17 +40,17 @@ public class Main {
         System.out.println("Podaj datę od której chcesz rozpocząć sprawdzanie kursów walut w formacie(RRRR-MM-DD): ");
         endData = scan.nextLine();
 
-
-        link += "/" + tableType + "/" + currencyChoice + "/" + startData + "/" + endData + format;
+        if (tableType.equals("A") || tableType.equals("C")) {
+            link += "/rates/" + tableType + "/" + currencyChoice + "/" + startData + "/" + endData + format;
+        } else if (tableType.equals("B")) {
+            link += "/tables/B/" + startData + "/" + endData + format;
+        }
         System.out.println(link);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .GET()
                 .uri(URI.create(link))
                 .build();
-
-        System.out.println(link);
-
 
         try {
 
@@ -59,20 +60,46 @@ public class Main {
 
             String responseBody = resp.body(); // cialo odpowiedzi - jest w formacie json
 
-            // deklaruje object mappera żeby odzytać treść (stworzyłam schemat poboieranych danych w NOtowanieCenyZłota)
+        // odczytanie tresci z jsona
 
             ObjectMapper objectMapper = new ObjectMapper();
 
             // wynikiem będzie lista więc musimy zmapować - NewTypeReference
-            List<CurrencyData> notowania = objectMapper.readValue(responseBody,
-                    new TypeReference<List<CurrencyData>>() {
-                    });
-            notowania.forEach(System.out::println);
 
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (InterruptedException e) {
+           if(tableType.equals("A")) {
+               List<tableTypeA> importedData = objectMapper.readValue(responseBody,
+                       new TypeReference<List<tableTypeA>>() {
+                       });
+               importedData.forEach(System.out::println);
+
+           }
+
+            if(tableType.equals("B")) {
+                List<tableTypeB> importedData = objectMapper.readValue(responseBody,
+                        new TypeReference<List<tableTypeB>>() {
+                        });
+                importedData.forEach(System.out::println);
+
+            }
+
+            if(tableType.equals("C")) {
+                List<tableTypeC> importedData = objectMapper.readValue(responseBody,
+                        new TypeReference<List<tableTypeC>>() {
+                        });
+
+                importedData.forEach(System.out::println);
+
+            }
+
+
+
+
+
+
+
+
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
 

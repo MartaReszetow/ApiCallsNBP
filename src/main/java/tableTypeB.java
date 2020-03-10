@@ -5,19 +5,18 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.List;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @ToString
+public class tableTypeB {
 
-public class CurrencyData {
     @JsonProperty("table")
     public String table;
-    @JsonProperty("currency")
-    public String currency;
-    @JsonProperty("code")
-    public String code;
+    @JsonProperty("no")
+    public String no;
+    @JsonProperty("effectiveDate")
+    public String effectiveDate;
     @JsonProperty("rates")
-    public List<Rate> rates = null;
+    public List<RateB> ratesB =null;
 }

@@ -2,11 +2,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
 @NoArgsConstructor
-    public class Rate {
+@ToString
+    public class RateA {
 
         @JsonProperty("no")
         public String no;
