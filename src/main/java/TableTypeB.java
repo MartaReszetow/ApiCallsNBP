@@ -9,7 +9,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @ToString
-public class tableTypeB {
+public class TableTypeB {
 
     @JsonProperty("table")
     public String table;

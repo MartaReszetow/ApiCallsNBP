@@ -16,5 +16,7 @@ import lombok.ToString;
     public String code;
     @JsonProperty("mid")
     public Float mid;
+
+
     }
 

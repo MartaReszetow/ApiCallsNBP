@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString
+
     public class RateA {
 
         @JsonProperty("no")
@@ -17,5 +17,12 @@ import lombok.ToString;
         @JsonProperty("mid")
         public Float mid;
 
+    @Override
+    public String toString() {
+        return "{" +
+                "data='" + effectiveDate + '\'' +
+                ", mid=" + mid +
+                '}';
     }
+}
 

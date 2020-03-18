@@ -1,13 +1,14 @@
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import javax.sound.midi.Soundbank;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Scanner;
 
 public class Main {
@@ -18,7 +19,7 @@ public class Main {
 
     public static void main(String[] args) {
         // zapytanie do linku
-        // "A" i "C"        http://api.nbp.pl/api/exchangerates/rates/{table}/{currency}/{startDate}/{endDate}/?format=json
+        // "A" i "C"        http://api.nbp.pl/api/exchangerates/rates/{table}/{currency}/{endDate}/?format=json
         // "B"              http://api.nbp.pl/api/exchangerates/tables/B/{startDate}/{endDate}/?format=json
         String link = "http://api.nbp.pl/api/exchangerates";
 
@@ -60,50 +61,176 @@ public class Main {
 
             String responseBody = resp.body(); // cialo odpowiedzi - jest w formacie json
 
-        // odczytanie tresci z jsona
+            // odczytanie tresci z jsona
 
             ObjectMapper objectMapper = new ObjectMapper();
 
-            // wynikiem będzie lista więc musimy zmapować - NewTypeReference
+            // - dla tabel(A i C) wynikiem będzie tabela a gdzieś głębiej ratesy
+            // dla tabeli B od razu mamy liste
 
 
-           if(tableType.equals("A")) {
-               List<tableTypeA> importedData = objectMapper.readValue(responseBody,
-                       new TypeReference<List<tableTypeA>>() {
-                       });
-               importedData.forEach(System.out::println);
+            TableTypeA importedDataA = null;
+            List<TableTypeB> importedDataB = null;
+            TableTypeC importedDataC = null;
 
-           }
 
-            if(tableType.equals("B")) {
-                List<tableTypeB> importedData = objectMapper.readValue(responseBody,
-                        new TypeReference<List<tableTypeB>>() {
-                        });
-                importedData.forEach(System.out::println);
+            if (tableType.equalsIgnoreCase("A")) {
+                importedDataA = objectMapper.readValue(responseBody,
+                        TableTypeA.class);
+                //     String printRates = importedDataA.toString();
+                //     System.out.println(printRates);
 
             }
 
-            if(tableType.equals("C")) {
-                List<tableTypeC> importedData = objectMapper.readValue(responseBody,
-                        new TypeReference<List<tableTypeC>>() {
+            if (tableType.equalsIgnoreCase("B")) {
+                importedDataB = objectMapper.readValue(responseBody,
+                        new TypeReference<List<TableTypeB>>() {
                         });
+                //    importedDataB.forEach(System.out::println);
+            }
 
-                importedData.forEach(System.out::println);
-
+            if (tableType.equalsIgnoreCase("C")) {
+                importedDataC = objectMapper.readValue(responseBody,
+                        TableTypeC.class);
+                //    String printRates = importedDataC.toString();
+                //    System.out.println(printRates);
             }
 
 
+            String menu = "Co chcesz zrobić ?:" + "\n" +
+                    "*** jeśli chcesz obliczyć średnią kursu dla podanego przedziału napisz: \"SREDNIA\" " + "\n" +
+                    "*** jeśli chcesz obliczyć odchylenie maxymalne  napisz:  \"ODCHYLENIE\" " + "\n" +
+                    "*** jeśi chcesz obliczyć max i min wartości kursów napisz: \"MINMAX\"  " + "\n" +
+                    "*** jeśli chcesz zakończyć program napisz: \"STOP\"";
 
 
+            System.out.println(menu);
+            String komenda = scan.nextLine().toUpperCase();
+            while (!komenda.equalsIgnoreCase("STOP")) {
 
 
+                // ___________________ SREDNIA ______________________________
+
+                if (komenda.equals("SREDNIA") && tableType.equals("A")) {
+                    getAverageForTableA(importedDataA);
+                } else if (komenda.equals("SREDNIA") && tableType.equals("B")) {
+                    System.err.println("brak możliwości policzenia średniej dla tej tabeli");
+                } else if (komenda.equals("SREDNIA") && tableType.equals("C")) {
+                    getAverageForTableC(importedDataC);
+                }
+
+                // ___________________ ODCHYLENIE ______________________________
+
+                if (komenda.equals("ODCHYLENIE") && tableType.equals("A")) {
+                    getDeviationForTableA(importedDataA);
+                } else if (komenda.equals("ODCHYLENIE") && tableType.equals("B")) {
+                    System.err.println("brak możliwości policzenia odchyenia dla tej tabeli");
+                }
+                if (komenda.equals("ODCHYLENIE") && tableType.equals("C")) {
+                    getDeviationForTableC(importedDataC);
+                }
 
 
-        } catch (IOException | InterruptedException e) {
+                // ___________________ MIN i MAX ______________________________
+
+                if (komenda.equals("MINMAX") && tableType.equals("A")) {
+                    getMinMaxForTableA(importedDataA);
+                } else if (komenda.equals("MINMAX") && tableType.equals("B")) {
+                    System.err.println("brak możliwości policzenia min i max dla tej tabeli");
+                }
+                if (komenda.equals("MINMAX") && tableType.equals("C")) {
+                    getMinMaxForTableC(importedDataC);
+                }
+
+
+                System.out.println("Podaj nową komendę");
+                komenda = scan.nextLine().toUpperCase();
+            }
+        } catch (NullPointerException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
-
-
     }
 
+
+// --------------- metody obiczające SREDNIA w zależności od wybranej tabeli (A/C)-----------------------
+
+    private static void getAverageForTableA(TableTypeA importedData) {
+        OptionalDouble averageA = importedData.getRatesA().stream().mapToDouble(RateA::getMid).average();
+        if (averageA.isPresent()) {
+            System.out.println("średni kurs dla podanego przedziału czasu wynosi:" + averageA.getAsDouble());
+        } else {
+            System.err.println("Nie można obliczyć średniej dla zadanego przedziału czasu");
+        }
+    }
+
+    private static void getAverageForTableC(TableTypeC importedData) {
+        OptionalDouble averageBID = importedData.getRatesC().stream().mapToDouble(RateC::getBid).average();
+        OptionalDouble averageASK = importedData.getRatesC().stream().mapToDouble(RateC::getAsk).average();
+
+        if (averageBID.isPresent() && averageASK.isPresent()) {
+            System.out.println("średni kurs sprzedaży(BID):" + averageBID.getAsDouble() + "  średni kurs kupna(ASK): " + averageASK.getAsDouble());
+        } else {
+            System.err.println("Nie można obliczyć średniej dla zadanego przedziału czasu");
+        }
+    }
+
+    // -----------------------metody obiczające ODCHYLENIE w zależności od wybranej tabeli (A/C)----------------------
+
+    private static void getDeviationForTableA(TableTypeA importedDataA) {
+        OptionalDouble max = importedDataA.getRatesA().stream().mapToDouble(RateA::getMid).max();
+        OptionalDouble min = importedDataA.getRatesA().stream().mapToDouble(RateA::getMid).min();
+
+        if (max.isPresent() && min.isPresent()) {
+
+
+            Double odchylenie = max.getAsDouble() - min.getAsDouble();
+            System.out.println("różnica między maksymalną i minimalną wartością (odchylenie) wynosiła w danym oksesie: " + odchylenie);
+        }
+    }
+
+    private static void getDeviationForTableC(TableTypeC importedDataC) {
+        OptionalDouble maxBid = importedDataC.getRatesC().stream().mapToDouble(RateC::getBid).max();
+        OptionalDouble minBid = importedDataC.getRatesC().stream().mapToDouble(RateC::getBid).min();
+
+        OptionalDouble maxAsk = importedDataC.getRatesC().stream().mapToDouble(RateC::getAsk).max();
+        OptionalDouble minAsk = importedDataC.getRatesC().stream().mapToDouble(RateC::getAsk).min();
+
+        if (maxBid.isPresent() && minBid.isPresent() && maxAsk.isPresent() && minAsk.isPresent()) {
+            Double odchylenieBid = maxBid.getAsDouble() - minBid.getAsDouble();
+            Double odchylenieAsk = maxAsk.getAsDouble() - minAsk.getAsDouble();
+            System.out.println("różnica między maksymalną i minimalną wartością (odchylenie) wynosiła w danym oksesie: \n" +
+                    +odchylenieBid + " - dla sprzedaży waluty (BID) \n" +
+                    odchylenieAsk + " - da kupna waluty (ASK)");
+        }
+    }
+
+
+    // -------------------metody obiczające MIN i MAX w zależności od wybranej tabeli (A/C)----------------
+
+    private static void getMinMaxForTableA(TableTypeA importedDataA) {
+        OptionalDouble max = importedDataA.getRatesA().stream().mapToDouble(RateA::getMid).max();
+        OptionalDouble min = importedDataA.getRatesA().stream().mapToDouble(RateA::getMid).min();
+
+        if (max.isPresent() && min.isPresent()) {
+            System.out.println("Dla podanego przedziału czasu wartości Min i Max wynosiły odpowiednio: \n"
+                    + "MIN: " + min.getAsDouble() + "\nMAX: " + max.getAsDouble());
+        }
+    }
+
+    private static void getMinMaxForTableC(TableTypeC importedDataC) {
+        OptionalDouble maxBid = importedDataC.getRatesC().stream().mapToDouble(RateC::getBid).max();
+        OptionalDouble minBid = importedDataC.getRatesC().stream().mapToDouble(RateC::getBid).min();
+
+        OptionalDouble maxAsk = importedDataC.getRatesC().stream().mapToDouble(RateC::getAsk).max();
+        OptionalDouble minAsk = importedDataC.getRatesC().stream().mapToDouble(RateC::getAsk).min();
+
+        if (maxBid.isPresent() && minBid.isPresent() && maxAsk.isPresent() && minAsk.isPresent()) {
+            System.out.println("Dla podanego przedziału czasu wartości Min i Max wynosiły odpowiednio: \n" +
+                    "dla sprzedaży (BID): \n"
+                    + "- MIN: " + minBid.getAsDouble() + "\n- MAX: " + maxBid.getAsDouble() +
+                    "\n dla kupna(ASK): \n"
+                    + "- MIN: " + minAsk.getAsDouble() + "\n- MAX: " + maxAsk.getAsDouble()
+            );
+        }
+    }
 }

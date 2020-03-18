@@ -7,7 +7,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @NoArgsConstructor
-@ToString
+
     public class RateC {
 
 
@@ -20,5 +20,14 @@ import lombok.ToString;
     @JsonProperty("ask")
     public Float ask;
 
+
+    @Override
+    public String toString() {
+        return "{" +
+                "data='" + effectiveDate + '\'' +
+                ", bid=" + bid +
+                ", ask=" + ask +
+                '}';
     }
+}
 

@@ -9,8 +9,7 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @ToString
-public class tableTypeC {
-
+public class TableTypeA {
     @JsonProperty("table")
     public String table;
     @JsonProperty("currency")
@@ -18,5 +17,6 @@ public class tableTypeC {
     @JsonProperty("code")
     public String code;
     @JsonProperty("rates")
-    public List<RateC> ratesC=null;
+    public List<RateA> ratesA=null;
+
 }
