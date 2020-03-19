@@ -7,7 +7,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Arrays;
 import java.util.List;
 import java.util.OptionalDouble;
 import java.util.Scanner;
@@ -27,30 +26,25 @@ public class Main {
 
         Scanner scan = new Scanner(System.in);
         String tableType;
-        String currencyChoice;
+        String currencyChoice = null;
         String startData;
         String endData;
         String format = "/?format=json";
 
 // ______ zapytania do użytkowinika o wprowadzenie danych i wstępna weryfikacja ich poprawności (rodzaj tabeli/waluta)__________
-        System.out.println("Podaj rodzaj tabeli (A/B/C)");
-        tableType = scan.nextLine().toUpperCase();
-        if (!tableType.equals("A") && !tableType.equals("B") && !tableType.equals("C")) {
-            System.err.println("Błędnie podany rodzaj tabeli. Spróbuj ponownie");
-            tableType = scan.nextLine().toUpperCase();
-        }
-        System.out.println("Podaj walutę, dla której chcesz spradzić statystyki:");
-        currencyChoice = scan.nextLine().toUpperCase();
-        try {
-            if (!(Currency.valueOf(currencyChoice)).toString().equals(currencyChoice)) {
-                // jeżeli nie ma takiej waluty w dostępnych opcjach w enumie Currency to obsluguje wyjatek i
-                // prosi użyytkownika o ponowne wpisanie waluty
-            }
-        } catch (IllegalArgumentException eeeexc) {
-            System.err.println("Błędnie podana waluta. Spróbuj ponownie.");
-            currencyChoice = scan.nextLine().toUpperCase();
 
+        do {
+            System.out.println("Podaj rodzaj tabeli (A/B/C)");
+            tableType = scan.nextLine().toUpperCase();
+        } while (!correctTableType(tableType));
+
+
+        do {
+
+            System.out.println("Podaj walutę, dla której chcesz spradzić statystyki:");
+            currencyChoice = scan.nextLine().toUpperCase();
         }
+        while (!correctCurrency(currencyChoice));
 
         System.out.println("Podaj datę od której chcesz rozpocząć sprawdzanie kursów walut w formacie(RRRR-MM-DD): ");
         startData = scan.nextLine();
@@ -169,6 +163,30 @@ public class Main {
         } catch (NullPointerException | IOException | InterruptedException e) {
             e.printStackTrace();
         }
+    }
+
+    private static boolean correctCurrency(String currencyChoice) {
+        boolean isCurrencyCorrect = false;
+        try {
+            if (!(Currency.valueOf(currencyChoice)).toString().equals(currencyChoice)) {
+                // jeżeli nie ma takiej waluty w dostępnych opcjach w enumie Currency to obsluguje wyjatek i
+                // prosi użyytkownika o ponowne wpisanie waluty
+                isCurrencyCorrect = false;
+            } else {
+                isCurrencyCorrect = true;
+            }
+        } catch (IllegalArgumentException exceptioooon) {
+            System.err.println("Podana waluta jest niepoprawna");
+        }
+        return isCurrencyCorrect;
+    }
+
+    private static boolean correctTableType(String tableType) {
+        boolean isTableTypeCorrect = false;
+        if (tableType.equals("A") || tableType.equals("B") || tableType.equals("C")) {
+            isTableTypeCorrect = true;
+        }
+        return isTableTypeCorrect;
     }
 
 // ________________________________________________METODY_______________________________________________________________
